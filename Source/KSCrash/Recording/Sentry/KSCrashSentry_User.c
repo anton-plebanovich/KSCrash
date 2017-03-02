@@ -66,26 +66,13 @@ void kscrashsentry_reportUserException(const char* name,
     {
         kscrashsentry_beginHandlingCrash(g_context);
 
-        KSLOG_DEBUG("Suspending all threads");
-        kscrashsentry_suspendThreads();
-
-        KSLOG_DEBUG("Fetching call stack.");
-        int callstackCount = 100;
-        uintptr_t callstack[callstackCount];
-        callstackCount = backtrace((void**)callstack, callstackCount);
-        if(callstackCount <= 0)
-        {
-            KSLOG_ERROR("backtrace() returned call stack length of %d", callstackCount);
-            callstackCount = 0;
-        }
-
         KSLOG_DEBUG("Filling out context.");
         g_context->crashType = KSCrashTypeUserReported;
         g_context->offendingThread = ksmach_thread_self();
         g_context->registersAreValid = false;
         g_context->crashReason = reason;
-        g_context->stackTrace = callstack;
-        g_context->stackTraceLength = callstackCount;
+        g_context->stackTrace = 0;
+        g_context->stackTraceLength = 0;
         g_context->userException.name = name;
         g_context->userException.language = language;
         g_context->userException.lineOfCode = lineOfCode;
@@ -97,13 +84,11 @@ void kscrashsentry_reportUserException(const char* name,
         if(terminateProgram)
         {
             kscrashsentry_uninstall(KSCrashTypeAll);
-            kscrashsentry_resumeThreads();
             abort();
         }
         else
         {
             kscrashsentry_clearContext(g_context);
-            kscrashsentry_resumeThreads();
         }
     }
 }
